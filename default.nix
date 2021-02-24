@@ -44,4 +44,6 @@ in
               -noprompt
           '';
       });
+
+  neovim = import ./neovim.nix { inherit pkgs; };
 }
