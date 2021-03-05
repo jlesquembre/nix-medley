@@ -13,18 +13,18 @@ rec {
       (localVimPlugin /path/to/plugin)
     ];
   */
-  localVimPlugin = p:
-    assert builtins.isPath p;
-    assert builtins.pathExists p;
+  localVimPlugin = path:
+    assert builtins.isPath path;
+    assert builtins.pathExists path;
     let
-      p-str = builtins.toString p;
-      name = baseNameOf p-str;
+      pathStr = builtins.toString path;
+      name = baseNameOf pathStr;
     in
     {
-      plugin = pkgs.runCommand name { }
+      plugin = pkgs.runCommandLocal name { }
         ''
           mkdir -p $out/share/vim-plugins
-          ln -s ${p-str} $out/share/vim-plugins/${name}
+          ln -s ${pathStr} $out/share/vim-plugins/${name}
         '';
     };
 
