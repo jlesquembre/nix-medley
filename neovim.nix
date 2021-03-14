@@ -28,6 +28,30 @@ rec {
         '';
     };
 
+  compileAniseed = { src, fnlDir ? "fnl", aniseed ? pkgs.vimPlugins.aniseed }:
+    let
+      # Required to accept pkgs.vimPlugins AND pkgs.fetchFromGitHub
+      aniseed-plugin-root = aniseed + /share/vim-plugins/aniseed;
+      aniseed-root = if builtins.pathExists (aniseed-plugin-root) then aniseed-plugin-root else aniseed;
+
+    in
+    pkgs.runCommand "aniseed-output"
+      {
+        src = src;
+        allowSubstitues = false;
+        preferLocalBuild = true;
+      }
+      ''
+        mkdir $out
+        # # Don't copy fennel src dir
+        # shopt -s extglob
+        # cp -r ${src}/!(${fnlDir}) $out
+
+        ${pkgs.neovim}/bin/nvim -u NONE -i NONE --headless \
+            -c "let &runtimepath = &runtimepath . ',${aniseed-root}'" \
+            -c "lua require('aniseed.compile').glob('**/*.fnl', '${src}/${fnlDir}', '$out/lua')" \
+            +q
+      '';
 
   /*
     Compiles an aniseed plugin.
@@ -45,35 +69,48 @@ rec {
     See compileAniseedPluginLocal for an example
 
   */
-  compileAniseedPlugin = { name, version, src, fnlDir ? "fnl", aniseed ? pkgs.vimPlugins.aniseed }:
+  compileAniseedPlugin = { name ? null, version ? null, src, fnlDir ? "fnl", aniseed ? pkgs.vimPlugins.aniseed, asVimPlugin ? true }:
+    # for vim plugins, name and version is mandatory
+    assert asVimPlugin -> name != null;
+    assert asVimPlugin -> version != null;
+
     let
       # Required to accept pkgs.vimPlugins AND pkgs.fetchFromGitHub
       aniseed-plugin-root = aniseed + /share/vim-plugins/aniseed;
       aniseed-root = if builtins.pathExists (aniseed-plugin-root) then aniseed-plugin-root else aniseed;
+      out-name = if asVimPlugin then "${name}-compiled" else "aniseed-output";
 
-      luaCode = pkgs.runCommand "${name}-compiled"
+      luaCode = pkgs.runCommand out-name
         {
           src = src;
           allowSubstitues = false;
           preferLocalBuild = true;
         }
-        ''
-          mkdir $out
-          # Don't copy fennel src dir
-          shopt -s extglob
-          cp -r ${src}/!(${fnlDir}) $out
+        (
+          lib.optionalString asVimPlugin
+            ''
+              mkdir $out
+              # Don't copy fennel src dir
+              shopt -s extglob
+              cp -r ${src}/!(${fnlDir}) $out
+            ''
+          +
+          ''
 
           ${pkgs.neovim}/bin/nvim -u NONE -i NONE --headless \
               -c "let &runtimepath = &runtimepath . ',${aniseed-root}'" \
               -c "lua require('aniseed.compile').glob('**/*.fnl', '${src}/${fnlDir}', '$out/lua')" \
               +q
-        '';
+        ''
+        );
     in
-    pkgs.vimUtils.buildVimPluginFrom2Nix {
-      pname = name;
-      version = version;
-      src = luaCode;
-    };
+    if asVimPlugin then
+      pkgs.vimUtils.buildVimPluginFrom2Nix
+        {
+          pname = name;
+          version = version;
+          src = luaCode;
+        } else luaCode;
 
 
   /*
