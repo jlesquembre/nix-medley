@@ -46,4 +46,15 @@ in
       });
 
   neovim = import ./neovim.nix { inherit pkgs; };
+
+  # From https://discourse.nixos.org/t/wrapping-a-program-symlinking-at-same-time/8256
+  writeShellScriptBinAndSymlink =
+    { pkg, text, name ? pkgs.lib.strings.getName pkg }:
+    pkgs.symlinkJoin {
+      name = name;
+      paths = [
+        pkg
+        (pkgs.writeShellScriptBin name text)
+      ];
+    };
 }
