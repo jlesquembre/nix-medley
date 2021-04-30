@@ -53,8 +53,8 @@ in
     pkgs.symlinkJoin {
       name = name;
       paths = [
-        pkg
         (pkgs.writeShellScriptBin name text)
+        pkg
       ];
     };
 }
