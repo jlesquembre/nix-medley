@@ -1,8 +1,17 @@
 { pkgs ? import <nixpkgs> { } }:
 let
   lib = pkgs.lib;
+
+  # Helper functions (in let block to avoid rec)
+
+  hasFile = path: fn:  lib.any fn (lib.filesystem.listFilesRecursive path) ;
+
+  hasFileWithSuffix = path: suffix: hasFile path (file: lib.hasSuffix suffix file );
+
 in
 {
+  inherit hasFile hasFileWithSuffix;
+
   exportVars = (vars:
     lib.concatStringsSep "\n"
       (lib.mapAttrsToList (n: v: ''export ${n}="${v}"'') vars)

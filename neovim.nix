@@ -28,7 +28,7 @@ rec {
         '';
     };
 
-  compileAniseed = { src, fnlDir ? "fnl", aniseed ? pkgs.vimPlugins.aniseed }:
+  compileAniseed = { src, fnlDir ? "fnl", outPrefix ? "lua/", aniseed ? pkgs.vimPlugins.aniseed }:
     let
       # Required to accept pkgs.vimPlugins AND pkgs.fetchFromGitHub
       aniseed-plugin-root = aniseed + /share/vim-plugins/aniseed;
@@ -46,7 +46,7 @@ rec {
 
         ${pkgs.neovim}/bin/nvim -u NONE -i NONE --headless \
             -c "let &runtimepath = &runtimepath . ',${aniseed-root}'" \
-            -c "lua require('aniseed.compile').glob('**/*.fnl', '${src}/${fnlDir}', '$out/lua')" \
+            -c "lua require('aniseed.compile').glob('**/*.fnl', '${src}/${fnlDir}', '$out/${outPrefix}')" \
             +q
       '';
 
