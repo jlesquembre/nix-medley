@@ -18,13 +18,12 @@ rec {
     assert builtins.pathExists path;
     let
       pathStr = builtins.toString path;
-      name = baseNameOf pathStr;
+      name = "${baseNameOf pathStr}-DEV";
     in
     {
       plugin = pkgs.runCommandLocal name { }
         ''
-          mkdir -p $out/share/vim-plugins
-          ln -s ${pathStr} $out/share/vim-plugins/${name}
+          ln -s ${lib.escapeShellArg pathStr} $out
         '';
     };
 
